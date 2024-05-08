@@ -1,8 +1,13 @@
+import json
+import logging
+
 from django.http import JsonResponse
 from django.templatetags.static import static
+from django.views.decorators.http import require_http_methods
 
+from .models import Order, OrderItem, Product
 
-from .models import Product
+logger = logging.getLogger(__name__)
 
 
 def banners_list_api(request):
@@ -57,6 +62,24 @@ def product_list_api(request):
     })
 
 
+@require_http_methods(["POST"])
 def register_order(request):
-    # TODO это лишь заглушка
-    return JsonResponse({})
+    data = json.loads(request.body.decode('utf-8'))
+
+    order = Order.objects.create(
+        firstname=data['firstname'],
+        lastname=data['lastname'],
+        phonenumber=data['phonenumber'],
+        address=data['address']
+    )
+
+    for product_info in data['products']:
+        product = Product.objects.get(pk=product_info['product'])
+        OrderItem.objects.create(
+            order=order,
+            product_name=product.name,
+            quantity=product_info['quantity'],
+            price=product.price
+        )
+
+    return JsonResponse({"message": "Order created successfully"}, status=201)
