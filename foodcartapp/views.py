@@ -1,4 +1,5 @@
 import json
+import re
 import logging
 
 from django.http import JsonResponse
@@ -71,28 +72,46 @@ def register_order(request):
     print(json.dumps(order_params, indent=4, ensure_ascii=False))
 
     required_fields = ['firstname', 'lastname', 'phonenumber', 'address', 'products']
+
     for field in required_fields:
         if field not in order_params:
-            return Response({"error": f"Field '{field}' is required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": f"{field} is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not isinstance(order_params['firstname'], str) or not order_params['firstname'].strip():
+        return Response({"error": "Firstname must be a non-empty string"}, status=status.HTTP_400_BAD_REQUEST)
+    if not isinstance(order_params['lastname'], str) or not order_params['lastname'].strip():
+        return Response({"error": "Lastname must be a non-empty string"}, status=status.HTTP_400_BAD_REQUEST)
+    if not isinstance(order_params['phonenumber'], str) or not order_params['phonenumber'].strip():
+        return Response({"error": "Phonenumber must be a non-empty string"}, status=status.HTTP_400_BAD_REQUEST)
+    if not isinstance(order_params['address'], str) or not order_params['address'].strip():
+        return Response({"error": "Address must be a non-empty string"}, status=status.HTTP_400_BAD_REQUEST)
+    if not isinstance(order_params['products'], list):
+        return Response({"error": "Products must be a list"}, status=status.HTTP_400_BAD_REQUEST)
     
-    product_list = order_params.get('products', [])
-    if not isinstance(product_list, list) or not product_list:
-        return Response({"error": "Field 'products' must be a non-empty list"}, status=status.HTTP_400_BAD_REQUEST)
-    
-    for product_item in product_list:
+    phone_regex = re.compile(r'^\+79\d{9}$')
+    if not phone_regex.match(order_params['phonenumber']):
+        return Response({"error": "Phonenumber is invalid"}, status=status.HTTP_400_BAD_REQUEST)
+
+
+    products = order_params['products']
+    if not products:
+        return Response({"error": "Products list cannot be empty"}, status=status.HTTP_400_BAD_REQUEST)
+
+    product_ids = []
+    for product_item in products:
         if 'product' not in product_item or 'quantity' not in product_item:
-            return Response({"error": "Each product must contain 'product' and 'quantity' fields"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        try:
-            product_id = int(product_item['product'])
-            quantity = int(product_item['quantity'])
-            if quantity <= 0:
-                raise ValueError
-        except ValueError:
-            return Response({"error": "Product ID and quantity must be positive integers"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if not Product.objects.filter(pk=product_id).exists():
-            return Response({"error": f"Product with id {product_id} does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Each product item must contain 'product' and 'quantity' fields"}, status=status.HTTP_400_BAD_REQUEST)
+        if not isinstance(product_item['product'], int):
+            return Response({"error": "Product ID must be an integer"}, status=status.HTTP_400_BAD_REQUEST)
+        if not isinstance(product_item['quantity'], int) or product_item['quantity'] <= 0:
+            return Response({"error": "Quantity must be a positive integer"}, status=status.HTTP_400_BAD_REQUEST)
+        product_ids.append(product_item['product'])
+
+    if len(product_ids) != len(set(product_ids)):
+        return Response({"error": "Duplicate products are not allowed"}, status=status.HTTP_400_BAD_REQUEST)
+
+    if not Product.objects.filter(id__in=product_ids).exists():
+        return Response({"error": "One or more products do not exist"}, status=status.HTTP_400_BAD_REQUEST)
 
     order = Order.objects.create(
         firstname=order_params['firstname'],
@@ -101,7 +120,7 @@ def register_order(request):
         address=order_params['address']
     )
     
-    for product_item in product_list:
+    for product_item in products:
         product = Product.objects.get(pk=product_item['product'])
         OrderItem.objects.create(
             order=order,
