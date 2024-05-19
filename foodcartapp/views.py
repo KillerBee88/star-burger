@@ -3,7 +3,9 @@ import logging
 
 from django.http import JsonResponse
 from django.templatetags.static import static
-from django.views.decorators.http import require_http_methods
+from rest_framework import status
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 from .models import Order, OrderItem, Product
 
@@ -62,24 +64,27 @@ def product_list_api(request):
     })
 
 
-@require_http_methods(["POST"])
+@api_view(['POST'])
 def register_order(request):
-    data = json.loads(request.body.decode('utf-8'))
+    order_params = request.data
+
+    print(json.dumps(order_params, indent=4, ensure_ascii=False))
 
     order = Order.objects.create(
-        firstname=data['firstname'],
-        lastname=data['lastname'],
-        phonenumber=data['phonenumber'],
-        address=data['address']
+        firstname=order_params['firstname'],
+        lastname=order_params['lastname'],
+        phonenumber=order_params['phonenumber'],
+        address=order_params['address']
     )
 
-    for product_info in data['products']:
-        product = Product.objects.get(pk=product_info['product'])
+    product_list = order_params['products']
+    for product_item in product_list:
+        product = Product.objects.get(pk=product_item['product'])
         OrderItem.objects.create(
             order=order,
             product_name=product.name,
-            quantity=product_info['quantity'],
+            quantity=product_item['quantity'],
             price=product.price
         )
 
-    return JsonResponse({"message": "Order created successfully"}, status=201)
+    return Response({"message": "Order created successfully", "order_id": order.id}, status=status.HTTP_201_CREATED)
