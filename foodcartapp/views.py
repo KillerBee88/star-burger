@@ -70,14 +70,37 @@ def register_order(request):
 
     print(json.dumps(order_params, indent=4, ensure_ascii=False))
 
+    required_fields = ['firstname', 'lastname', 'phonenumber', 'address', 'products']
+    for field in required_fields:
+        if field not in order_params:
+            return Response({"error": f"Field '{field}' is required"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    product_list = order_params.get('products', [])
+    if not isinstance(product_list, list) or not product_list:
+        return Response({"error": "Field 'products' must be a non-empty list"}, status=status.HTTP_400_BAD_REQUEST)
+    
+    for product_item in product_list:
+        if 'product' not in product_item or 'quantity' not in product_item:
+            return Response({"error": "Each product must contain 'product' and 'quantity' fields"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            product_id = int(product_item['product'])
+            quantity = int(product_item['quantity'])
+            if quantity <= 0:
+                raise ValueError
+        except ValueError:
+            return Response({"error": "Product ID and quantity must be positive integers"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        if not Product.objects.filter(pk=product_id).exists():
+            return Response({"error": f"Product with id {product_id} does not exist"}, status=status.HTTP_400_BAD_REQUEST)
+
     order = Order.objects.create(
         firstname=order_params['firstname'],
         lastname=order_params['lastname'],
         phonenumber=order_params['phonenumber'],
         address=order_params['address']
     )
-
-    product_list = order_params['products']
+    
     for product_item in product_list:
         product = Product.objects.get(pk=product_item['product'])
         OrderItem.objects.create(
@@ -86,5 +109,5 @@ def register_order(request):
             quantity=product_item['quantity'],
             price=product.price
         )
-
+    
     return Response({"message": "Order created successfully", "order_id": order.id}, status=status.HTTP_201_CREATED)
