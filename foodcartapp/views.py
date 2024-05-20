@@ -1,6 +1,4 @@
-import json
 import logging
-import re
 
 from django.http import JsonResponse
 from django.templatetags.static import static
@@ -8,7 +6,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from .models import Order, OrderItem, Product
+from .models import Product
 from .serializers import OrderSerializer
 
 logger = logging.getLogger(__name__)
@@ -68,9 +66,8 @@ def product_list_api(request):
 
 @api_view(['POST'])
 def register_order(request):
-
     serializer = OrderSerializer(data=request.data)
     if serializer.is_valid():
         order = serializer.save()
-        return Response({"message": "Order created successfully", "order_id": order.id}, status=status.HTTP_201_CREATED)
+        return Response({"message": "Order created successfully", "order": serializer.data}, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
