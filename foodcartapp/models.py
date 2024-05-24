@@ -1,7 +1,7 @@
 from decimal import Decimal
 
 from django.core.validators import MinValueValidator
-from django.db import models, transaction
+from django.db import models
 from django.db.models import F, Sum
 from phonenumber_field.modelfields import PhoneNumberField
 
@@ -188,17 +188,3 @@ class OrderItem(models.Model):
             self.fixed_price = self.price
         super().save(*args, **kwargs)
         self.order.update_total_price()
-
-
-def create_order_with_items(order_data, items_data):
-    try:
-        with transaction.atomic():
-            order = Order.objects.create(**order_data)
-            for item_data in items_data:
-                OrderItem.objects.create(order=order, **item_data)
-            0 / 0
-            return order
-    except Exception as e:
-        print(f"Ошибка при создании заказа: {e}")
-        return None
-
