@@ -94,6 +94,6 @@ def view_restaurants(request):
 def view_orders(request):
     orders = Order.objects.all()
     for order in orders:
-        order.total_price_value = order.total_price()
+        order.total_price = order.calculate_total_price()
+    return render(request, 'order_items.html', {'orders': orders})
 
-    return render(request, template_name='order_items.html', context={'orders': orders})
