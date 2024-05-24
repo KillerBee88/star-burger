@@ -1,3 +1,4 @@
+from django.db import transaction
 from rest_framework import serializers
 
 from .models import Order, OrderItem, Product
@@ -44,13 +45,18 @@ class OrderSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         products_data = validated_data.pop('products')
-        order = Order.objects.create(**validated_data)
-        for product_data in products_data:
-            product = Product.objects.get(pk=product_data['product'])
-            OrderItem.objects.create(
-                order=order,
-                product=product,
-                quantity=product_data['quantity'],
-                price=product.price
-            )
-        return order
+
+        try:
+            with transaction.atomic():
+                order = Order.objects.create(**validated_data)
+                for product_data in products_data:
+                    product = Product.objects.get(pk=product_data['product'])
+                    OrderItem.objects.create(
+                        order=order,
+                        product=product,
+                        quantity=product_data['quantity'],
+                        price=product.price
+                    )
+                return order
+        except Exception as e:
+            raise serializers.ValidationError(f"Order creation failed: {e}")
