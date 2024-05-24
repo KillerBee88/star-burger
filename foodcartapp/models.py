@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import F, Sum
@@ -130,6 +132,14 @@ class Order(models.Model):
     lastname = models.CharField('фамилия', max_length=100)
     phonenumber = PhoneNumberField('номер телефона')
     address = models.CharField('адрес', max_length=255)
+    fixed_total_price = models.DecimalField(
+        'зафиксированная стоимость',
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.00'))],
+        default=Decimal('0.00')
+    )
+    _price_updated = False
 
     class Meta:
         verbose_name = 'заказ'
@@ -137,14 +147,23 @@ class Order(models.Model):
 
     def __str__(self):
         return f"{self.firstname} {self.lastname}"
-    
-    def total_price(self):
-        return self.items.aggregate(total=Sum(F('price') * F('quantity')))['total'] or 0
 
-
-class OrderItemQuerySet(models.QuerySet):
     def calculate_total_price(self):
-        return self.annotate(total_price=F('price') * F('quantity'))
+        return self.items.aggregate(
+            total=Sum(F('fixed_price') * F('quantity'))
+        )['total'] or Decimal('0.00')
+
+    def update_total_price(self):
+        self.fixed_total_price = self.calculate_total_price()
+        self._price_updated = True
+        self.save(update_fields=['fixed_total_price'])
+
+    def save(self, *args, **kwargs):
+        if not self._price_updated:
+            super().save(*args, **kwargs)
+            self.update_total_price()
+        else:
+            super().save(*args, **kwargs)
 
 
 class OrderItem(models.Model):
@@ -152,9 +171,10 @@ class OrderItem(models.Model):
         Order, related_name='items', on_delete=models.CASCADE, verbose_name="заказ")
     product = models.CharField('название продукта', max_length=100)
     quantity = models.PositiveIntegerField('количество')
-    price = models.DecimalField('цена', max_digits=10, decimal_places=2)
-
-    objects = OrderItemQuerySet.as_manager()
+    price = models.DecimalField(max_digits=10, decimal_places=2, validators=[
+                                MinValueValidator(Decimal('0.00'))])
+    fixed_price = models.DecimalField(
+        max_digits=10, decimal_places=2, validators=[MinValueValidator(Decimal('0.00'))], default=Decimal('0.00'))
 
     class Meta:
         verbose_name = 'позиция заказа'
@@ -162,3 +182,9 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.product} x {self.quantity}"
+
+    def save(self, *args, **kwargs):
+        if not self.fixed_price or self.fixed_price == Decimal('0.00'):
+            self.fixed_price = self.price
+        super().save(*args, **kwargs)
+        self.order.update_total_price()
