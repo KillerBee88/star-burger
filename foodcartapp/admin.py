@@ -106,11 +106,15 @@ class ProductAdmin(admin.ModelAdmin):
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
+    fields = ['product', 'quantity', 'price', 'fixed_price']
     extra = 1
 
 
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['firstname', 'lastname', 'phonenumber', 'address']
+    list_display = ['id', 'firstname', 'lastname',
+                    'phonenumber', 'address', 'fixed_total_price']
+    search_fields = ['firstname', 'lastname', 'phonenumber', 'address']
+    list_filter = ['fixed_total_price']
     inlines = [OrderItemInline]
 
 
