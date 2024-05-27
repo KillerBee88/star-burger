@@ -113,9 +113,9 @@ class OrderItemInline(admin.TabularInline):
 
 class OrderAdmin(admin.ModelAdmin):
     list_display = ['id', 'firstname', 'lastname',
-                    'phonenumber', 'address', 'fixed_total_price']
+                    'phonenumber', 'address', 'fixed_total_price', 'status']
     search_fields = ['firstname', 'lastname', 'phonenumber', 'address']
-    list_filter = ['fixed_total_price']
+    list_filter = ['fixed_total_price', 'status']
     inlines = [OrderItemInline]
 
     def response_change(self, request, obj):
