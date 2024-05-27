@@ -128,6 +128,18 @@ class RestaurantMenuItem(models.Model):
 
 
 class Order(models.Model):
+    ACCEPTED = 'accepted'
+    IN_PROCESS = 'in_process'
+    IN_DELIVERY = 'in_delivery'
+    RECEIVED = 'received'
+
+    STATUSES = [
+        (ACCEPTED, 'Принят'),
+        (IN_PROCESS, 'Собирается'),
+        (IN_DELIVERY, 'В пути'),
+        (RECEIVED, 'Получен'),
+    ]
+
     firstname = models.CharField('имя', max_length=100)
     lastname = models.CharField('фамилия', max_length=100)
     phonenumber = PhoneNumberField('номер телефона')
@@ -139,6 +151,8 @@ class Order(models.Model):
         validators=[MinValueValidator(Decimal('0.00'))],
         default=Decimal('0.00')
     )
+    status = models.CharField(max_length=20, choices=STATUSES, default=ACCEPTED, db_index=True)
+
     _price_updated = False
 
     class Meta:
