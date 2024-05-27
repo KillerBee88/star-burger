@@ -113,8 +113,8 @@ class OrderItemInline(admin.TabularInline):
 
 class OrderAdmin(admin.ModelAdmin):
     list_display = ['id', 'firstname', 'lastname',
-                    'phonenumber', 'address', 'fixed_total_price', 'status']
-    search_fields = ['firstname', 'lastname', 'phonenumber', 'address']
+                    'phonenumber', 'address', 'fixed_total_price', 'status', 'comments']
+    search_fields = ['firstname', 'lastname', 'phonenumber', 'address', 'comments']
     list_filter = ['fixed_total_price', 'status']
     inlines = [OrderItemInline]
 
