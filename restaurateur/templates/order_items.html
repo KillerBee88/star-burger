@@ -16,6 +16,7 @@
       <tr>
         <th class="text-center">ID заказа</th>
         <th class="text-center">Стоимость заказа</th>
+        <th class="text-center">Метод оплаты</th>
         <th class="text-center">Клиент</th>
         <th class="text-center">Телефон</th>
         <th class="text-center">Адрес доставки</th>
@@ -29,6 +30,7 @@
         <tr>
           <td class="text-center">{{ order.id }}</td>
           <td class="text-center">{{ order.fixed_total_price }}</td>
+          <td class="text-center">{{ order.payment_method }}</td>
           <td class="text-center">{{ order.firstname }} {{ order.lastname }}</td>
           <td class="text-center">{{ order.phonenumber }}</td>
           <td class="text-center">{{ order.address }}</td>
