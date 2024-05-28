@@ -140,6 +140,14 @@ class Order(models.Model):
         (RECEIVED, 'Получен'),
     ]
 
+    ELECTRONIC = 'electronic'
+    CASH = 'cash'
+
+    PAYMENT_METHODS = [
+        (ELECTRONIC, 'Электронно'),
+        (CASH, 'Наличными'),
+    ]
+
     firstname = models.CharField('имя', max_length=100)
     lastname = models.CharField('фамилия', max_length=100)
     phonenumber = PhoneNumberField('номер телефона')
@@ -159,6 +167,7 @@ class Order(models.Model):
     call_date = models.DateTimeField(
         blank=True, null=True, db_index=True)
     delivery_date = models.DateTimeField(blank=True, null=True, db_index=True)
+    payment_method = models.CharField('метод оплаты', max_length=20, choices=PAYMENT_METHODS, default=ELECTRONIC, db_index=True)
 
     _price_updated = False
 
