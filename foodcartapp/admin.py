@@ -113,10 +113,10 @@ class OrderItemInline(admin.TabularInline):
 
 class OrderAdmin(admin.ModelAdmin):
     list_display = ['id', 'created_at', 'firstname', 'lastname',
-                    'phonenumber', 'address', 'fixed_total_price', 'status', 'comments', 'call_date', 'delivery_date']
+                    'phonenumber', 'address', 'fixed_total_price', 'status', 'comments', 'call_date', 'delivery_date', 'payment_method']
     search_fields = ['firstname', 'lastname',
                      'phonenumber', 'address', 'comments']
-    list_filter = ['fixed_total_price', 'status']
+    list_filter = ['fixed_total_price', 'status', 'payment_method']
     readonly_fields = ('created_at',)
     inlines = [OrderItemInline]
 
@@ -125,6 +125,11 @@ class OrderAdmin(admin.ModelAdmin):
         if next_url and url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
             return redirect(next_url)
         return super().response_change(request, obj)
+
+    def display_payment_method(self, obj):
+        return obj.get_payment_method_display()
+
+    display_payment_method.short_description = 'Способ оплаты'
 
 
 admin.site.register(Order, OrderAdmin)
