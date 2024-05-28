@@ -112,10 +112,12 @@ class OrderItemInline(admin.TabularInline):
 
 
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ['id', 'firstname', 'lastname',
-                    'phonenumber', 'address', 'fixed_total_price', 'status', 'comments']
-    search_fields = ['firstname', 'lastname', 'phonenumber', 'address', 'comments']
+    list_display = ['id', 'created_at', 'firstname', 'lastname',
+                    'phonenumber', 'address', 'fixed_total_price', 'status', 'comments', 'call_date', 'delivery_date']
+    search_fields = ['firstname', 'lastname',
+                     'phonenumber', 'address', 'comments']
     list_filter = ['fixed_total_price', 'status']
+    readonly_fields = ('created_at',)
     inlines = [OrderItemInline]
 
     def response_change(self, request, obj):
