@@ -151,9 +151,14 @@ class Order(models.Model):
         validators=[MinValueValidator(Decimal('0.00'))],
         default=Decimal('0.00')
     )
-    status = models.CharField(
-        max_length=20, choices=STATUSES, default=ACCEPTED, db_index=True)
-    comments = models.TextField(blank=True, null=True)
+    status = models.CharField('статус',
+                              max_length=20, choices=STATUSES, default=ACCEPTED, db_index=True)
+    comments = models.TextField('комментарий', blank=True, null=True)
+    created_at = models.DateTimeField(
+        auto_now_add=True, db_index=True)
+    call_date = models.DateTimeField(
+        blank=True, null=True, db_index=True)
+    delivery_date = models.DateTimeField(blank=True, null=True, db_index=True)
 
     _price_updated = False
 
