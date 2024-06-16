@@ -113,12 +113,23 @@ class OrderItemInline(admin.TabularInline):
 
 class OrderAdmin(admin.ModelAdmin):
     list_display = ['id', 'created_at', 'firstname', 'lastname',
-                    'phonenumber', 'address', 'fixed_total_price', 'status', 'comments', 'call_date', 'delivery_date', 'payment_method']
+                    'phonenumber', 'address', 'fixed_total_price', 'status', 'comments', 'call_date', 'delivery_date', 'payment_method', 'restaurant']
     search_fields = ['firstname', 'lastname',
                      'phonenumber', 'address', 'comments']
     list_filter = ['fixed_total_price', 'status', 'payment_method']
     readonly_fields = ('created_at',)
     inlines = [OrderItemInline]
+
+    fieldsets = (
+        (None, {
+            'fields': ('firstname', 'lastname', 'phonenumber', 'address', 'status', 'comments', 'restaurant', 'fixed_total_price', 'payment_method')
+        }),
+    )
+
+    def save_model(self, request, obj, form, change):
+        if 'restaurant' in form.changed_data:
+            obj.status = 'собирается'
+        super().save_model(request, obj, form, change)
 
     def response_change(self, request, obj):
         next_url = request.GET.get('next')
