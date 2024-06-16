@@ -167,7 +167,10 @@ class Order(models.Model):
     call_date = models.DateTimeField(
         blank=True, null=True, db_index=True)
     delivery_date = models.DateTimeField(blank=True, null=True, db_index=True)
-    payment_method = models.CharField('метод оплаты', max_length=20, choices=PAYMENT_METHODS, default=ELECTRONIC, db_index=True)
+    payment_method = models.CharField(
+        'метод оплаты', max_length=20, choices=PAYMENT_METHODS, default=ELECTRONIC, db_index=True)
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.SET_NULL,
+                                   null=True, blank=True, related_name='orders', verbose_name='Ресторан')
 
     _price_updated = False
 
@@ -176,7 +179,7 @@ class Order(models.Model):
         verbose_name_plural = 'заказы'
 
     def __str__(self):
-        return f"{self.firstname} {self.lastname}"
+        return f"Order {self.firstname} {self.lastname}: {self.status}"
 
     def calculate_total_price(self):
         return self.items.aggregate(
