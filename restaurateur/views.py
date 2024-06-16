@@ -85,15 +85,35 @@ def view_products(request):
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_restaurants(request):
+    restaurants = Restaurant.objects.prefetch_related('menu_items__product').all()
+
+    for restaurant in restaurants:
+        restaurant.available_products = [
+            menu_item.product for menu_item in restaurant.menu_items.all() if menu_item.availability
+        ]
+
     return render(request, template_name="restaurants_list.html", context={
-        'restaurants': Restaurant.objects.all(),
+        'restaurants': restaurants,
     })
 
 
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    orders = Order.objects.all()
+    orders = Order.objects.prefetch_related('items').all()
+    
     for order in orders:
         order.total_price = order.calculate_total_price()
+        order.available_restaurants = get_available_restaurants(order)
+    
     return render(request, 'order_items.html', {'orders': orders})
 
+
+def get_available_restaurants(order):
+    order_product_names = {item.product for item in order.items.all()}
+    
+    available_restaurants = Restaurant.objects.filter(
+        menu_items__product__name__in=order_product_names, 
+        menu_items__availability=True
+    ).distinct()
+    
+    return available_restaurants
